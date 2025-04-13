@@ -1,0 +1,127 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum ActivityLevel {
+  SEDENTARY
+  LIGHTLY_ACTIVE
+  MODERATELY_ACTIVE
+  VERY_ACTIVE
+  EXTRA_ACTIVE
+}
+
+enum Goal {
+  LOSE_WEIGHT
+  MAINTAIN_WEIGHT
+  GAIN_WEIGHT
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  password      String
+  name          String?
+  age           Int?
+  gender        Gender?
+  weight        Float?
+  height        Float?
+  activityLevel ActivityLevel?
+  goal          Goal?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  meals         Meal[]
+  dailyStats    DailyStats[]
+  userGoals     UserGoal[]
+}
+
+model FoodItem {
+  id          Int        @id @default(autoincrement())
+  name        String
+  calories    Float
+  protein     Float
+  carbs       Float
+  fat         Float
+  servingSize Float
+  servingUnit String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  mealItems   MealItem[]
+}
+
+model MealItem {
+  id         Int      @id @default(autoincrement())
+  mealId     Int
+  foodItemId Int
+  quantity   Float
+  meal       Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  foodItem   FoodItem @relation(fields: [foodItemId], references: [id])
+}
+
+model Meal {
+  id        Int        @id @default(autoincrement())
+  userId    Int
+  type      MealType
+  date      DateTime   @default(now())
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mealItems MealItem[]
+}
+
+model DailyStats {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  date        DateTime @default(now()) @db.Date
+  calories    Float
+  protein     Float
+  carbs       Float
+  fat         Float
+  weight      Float?
+  calorieGoal Float
+  proteinGoal Float
+  carbsGoal   Float
+  fatGoal     Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model UserGoal {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  startDate    DateTime  @default(now()) @db.Date
+  endDate      DateTime?
+  startWeight  Float
+  targetWeight Float
+  achieved     Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

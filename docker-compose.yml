@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: nutritarget
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - nutritarget-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/nutritarget?schema=public
+      JWT_SECRET: dev_jwt_secret_key
+      JWT_EXPIRES_IN: 7d
+      PORT: 5000
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - nutritarget-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      REACT_APP_API_URL: http://localhost:5000/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - nutritarget-network
+
+networks:
+  nutritarget-network:
+    driver: bridge
+
+volumes:
+  postgres_data: 
